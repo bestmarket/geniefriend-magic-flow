@@ -246,6 +246,14 @@ export async function renderVideo(
     throw new Error("This browser can't assemble the video. Try Chrome on desktop.");
   }
 
+  if (ingredients.format === "shorts") {
+    WIDTH = 720;
+    HEIGHT = 1280;
+  } else {
+    WIDTH = 1280;
+    HEIGHT = 720;
+  }
+
   const canvas = document.createElement("canvas");
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
