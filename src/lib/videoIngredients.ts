@@ -9,6 +9,7 @@ export type TransitionType = "cut" | "crossfade" | "slide" | "zoom";
 export type MotionType = "none" | "zoom-in" | "zoom-out" | "pan-left" | "pan-right";
 export type MusicMood = "calm" | "uplifting" | "tense" | "epic";
 export type Grade = "none" | "warm" | "cool" | "mono" | "vivid" | "vhs";
+export type VideoFormat = "shorts" | "longform";
 
 export type VideoIngredients = {
   captions: { enabled: boolean; size: CaptionSize; position: "bottom" | "center"; color: string };
@@ -19,6 +20,8 @@ export type VideoIngredients = {
   grade: Grade;
   titleCard: { enabled: boolean; text: string; seconds: number };
   pacing: { minSceneSeconds: number; gapSeconds: number };
+  /** Shorts render vertical 9:16, longform renders 16:9. */
+  format: VideoFormat;
 };
 
 export const DEFAULT_INGREDIENTS: VideoIngredients = {
