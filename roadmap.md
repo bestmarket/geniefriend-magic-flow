@@ -1,10 +1,5 @@
 # Roadmap
 
-- [x] Import genie-buddy-pal codebase into this project (pages, components, server logic)
-- [x] Apply database schema migrations to this project's backend
-- [x] Verify build, routes, sign-up/sign-in, one create/read flow
-- [x] Real per-video source analysis: transcript fetching + LLM analysis, one-by-one progress bar on Sources
-- [x] Production layer (captions, transitions, music, SFX) — runs in the browser during assembly; true server-side rendering needs an external render service (blocked: no video encoder available on the hosting runtime)
-- [x] Re-import into fresh Lovable project (code copied, Cloud enabled, schema applied)
-- [x] Wire brainstorm analysis into the chat so analysed text appears there automatically
-- [x] Add a project panel with project titles, analysed styles, creation and switching
+- [ ] Import genie-buddy-fast from GitHub (code copied, Cloud enabled, schema applied — verifying)
+- [ ] Verify build, home page, sign-up/sign-in, one create/read flow
+- [ ] Upgrade chat brainstorm: channel-level analysis (virality, style, tone, hook patterns, visual style, thumbnails, growth) instead of per-video; guided step-by-step chat flow (name ideas → unique ideas → high-CTR titles → scripts modeling channel style); deep, premium answers
