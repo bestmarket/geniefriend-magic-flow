@@ -424,17 +424,29 @@ export const queueVideos = createServerFn({ method: "POST" })
           }));
         }
 
-        rows.push({
-          project_id: data.projectId,
-          script_id: script.id,
-          user_id: userId,
-          language,
-          title: title.slice(0, 200),
-          style: data.style,
-          status: data.scheduledAt ? "scheduled" : "queued",
-          scheduled_at: data.scheduledAt ?? null,
-          scenes: localized,
-        });
+        for (const format of data.formats) {
+          const short = format === "shorts";
+          // Shorts stay punchy: the first few scenes only, faster pacing, vertical frame.
+          const cut = short ? localized.slice(0, 5) : localized;
+          rows.push({
+            project_id: data.projectId,
+            script_id: script.id,
+            user_id: userId,
+            language,
+            title: `${title}${short ? " (Short)" : ""}`.slice(0, 200),
+            style: data.style,
+            status: data.scheduledAt ? "scheduled" : "queued",
+            scheduled_at: data.scheduledAt ?? null,
+            scenes: cut,
+            settings: {
+              format,
+              captions: { enabled: true, size: short ? "lg" : "md", position: short ? "center" : "bottom", color: "#ffffff" },
+              pacing: short
+                ? { minSceneSeconds: 2.5, gapSeconds: 0.15 }
+                : { minSceneSeconds: 3, gapSeconds: 0.35 },
+            },
+          });
+        }
       }
     }
 
