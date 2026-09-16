@@ -102,5 +102,6 @@ export function normalizeIngredients(raw: unknown): VideoIngredients {
       minSceneSeconds: num(pacing.minSceneSeconds, 1.5, 12, d.pacing.minSceneSeconds),
       gapSeconds: num(pacing.gapSeconds, 0, 2, d.pacing.gapSeconds),
     },
+    format: r["format"] === "shorts" ? "shorts" : "longform",
   };
 }

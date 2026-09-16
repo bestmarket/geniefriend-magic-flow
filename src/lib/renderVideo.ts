@@ -10,8 +10,9 @@ import { DEFAULT_INGREDIENTS, type VideoIngredients } from "./videoIngredients";
 
 export type RenderScene = { imageUrl: string; audioUrl: string | null; caption?: string };
 
-const WIDTH = 1280;
-const HEIGHT = 720;
+// Set per render: 16:9 for longform, 9:16 for shorts.
+let WIDTH = 1280;
+let HEIGHT = 720;
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
