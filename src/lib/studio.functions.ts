@@ -379,6 +379,11 @@ export const queueVideos = createServerFn({ method: "POST" })
         scriptIds: z.array(z.string().uuid()).min(1).max(10),
         languages: z.array(z.string().min(2).max(40)).min(1).max(6),
         style: z.string().min(1).max(40).default("cinematic"),
+        formats: z
+          .array(z.enum(["shorts", "longform"]))
+          .min(1)
+          .max(2)
+          .default(["longform"]),
         scheduledAt: z.string().datetime().nullable().optional(),
       })
       .parse(input),
