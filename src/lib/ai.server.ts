@@ -25,7 +25,11 @@ async function gatewayError(res: Response): Promise<Error> {
 }
 
 /** Streams a text answer from the writing model and returns the full text. */
-export async function askAI(system: string, prompt: string): Promise<string> {
+export async function askAI(
+  system: string,
+  prompt: string,
+  opts?: { reasoning?: "low" | "medium" | "high" },
+): Promise<string> {
   const res = await fetch(`${GATEWAY}/responses`, {
     method: "POST",
     headers: {
@@ -38,7 +42,7 @@ export async function askAI(system: string, prompt: string): Promise<string> {
       instructions: system,
       input: prompt,
       stream: true,
-      reasoning: { effort: "low" },
+      reasoning: { effort: opts?.reasoning ?? "low" },
     }),
   });
 
