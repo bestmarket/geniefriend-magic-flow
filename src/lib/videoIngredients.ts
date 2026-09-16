@@ -33,6 +33,7 @@ export const DEFAULT_INGREDIENTS: VideoIngredients = {
   grade: "none",
   titleCard: { enabled: false, text: "", seconds: 2.5 },
   pacing: { minSceneSeconds: 3, gapSeconds: 0.35 },
+  format: "longform",
 };
 
 const CAPTION_SIZES: CaptionSize[] = ["sm", "md", "lg"];
