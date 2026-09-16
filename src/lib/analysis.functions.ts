@@ -226,8 +226,10 @@ export const listProjectVideos = createServerFn({ method: "GET" })
   });
 
 /**
- * Turns every analysed video into one brainstorm the user can read in chat:
- * what these videos have in common and how to beat them.
+ * Turns every analysed video into a channel-level intelligence report.
+ * The report models the reference channel as a whole — its virality, voice,
+ * hooks, visuals, thumbnails and growth engine — so the user's own channel
+ * can produce original content with the same winning DNA.
  */
 export const buildBrainstorm = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -236,24 +238,32 @@ export const buildBrainstorm = createServerFn({ method: "POST" })
     const { askAI } = await import("./ai.server");
     const { supabase } = context;
 
-    const rows = await supabase
-      .from("source_videos")
-      .select("title,url,analysis")
-      .eq("project_id", data.projectId)
-      .eq("status", "done")
-      .limit(60);
+    const [rows, project] = await Promise.all([
+      supabase
+        .from("source_videos")
+        .select("title,url,analysis,thumbnail_url,published_at")
+        .eq("project_id", data.projectId)
+        .eq("status", "done")
+        .limit(60),
+      supabase
+        .from("projects")
+        .select("name,channel_profile")
+        .eq("id", data.projectId)
+        .single(),
+    ]);
     if (rows.error) throw new Error(rows.error.message);
 
     const analysed = (rows.data ?? []).filter((r) => r.analysis);
     if (analysed.length === 0) throw new Error("Analyse some videos first.");
 
     const digest = analysed
-      .map((r, i) => `${i + 1}. ${r.title ?? r.url}\n${JSON.stringify(r.analysis)}`)
+      .map((r, i) => `${i + 1}. ${r.title ?? r.url} (${r.published_at ?? "unknown date"})\n${JSON.stringify(r.analysis)}`)
       .join("\n\n");
 
     const brainstorm = await askAI(
-      "You are a viral content strategist. You read analyses of reference videos and turn them into a practical brainstorm the creator can act on today. Write clean markdown, no preamble.",
-      `Here are ${analysed.length} analysed reference videos:\n\n${digest}\n\nWrite the brainstorm with these sections:\n## What these videos have in common\n## Hook patterns that work\n## Winning structure\n## Topics with room to win\n## 8 video ideas for me (title + one-line hook each)\n## How to make mine better\nKeep every bullet short and specific.`,
+      `You are an elite YouTube channel strategist who reverse-engineers why channels grow. You study every analysed video from one reference channel and model the CHANNEL as a whole — not individual videos. Your analysis is specific, evidence-based (quote real titles and moments), and written for a creator who wants 100% monetisation-safe, high-watchtime content. Write clean markdown, no preamble, no filler.`,
+      `Reference channel: "${project.data?.name ?? "unknown"}".\nExisting channel formula (if any): ${JSON.stringify(project.data?.channel_profile ?? "none")}.\n\nHere are ${analysed.length} analysed videos from this channel:\n\n${digest}\n\nWrite the channel intelligence report with exactly these sections:\n## Channel DNA\nThe niche, the exact audience, the promise every video makes, and the channel owner's on-camera persona and relationship with viewers.\n## Why this channel goes viral\nThe retention mechanics and emotional triggers it exploits — curiosity gaps, stakes, payoff timing — with examples from the titles above.\n## Hook playbook\nThe 3-5 recurring opening patterns, each with a one-line template the user can reuse.\n## Winning story structure\nThe beat-by-beat blueprint most videos follow, with typical pacing and length.\n## Visual & thumbnail language\nRecurring visual style, imagery, framing and thumbnail patterns (subjects, colours, text treatment, emotion) that earn the click.\n## Voice & tone fingerprint\nSentence rhythm, vocabulary level, humour, how it speaks to the viewer — so writing can match it.\n## Growth engine\nUpload cadence signals, series/formats that repeat, how videos funnel into each other, and what compounds the channel's growth.\n## Monetisation & watchtime levers\nWhat keeps the content advertiser-safe and what stretches watch time (open loops, chaptering, payoff placement).\n## Gaps this channel leaves open\nUnderserved angles and topics in this niche the user can own.\n## 10 original video ideas in this channel's style\nEach: a high-CTR title plus a one-line hook. Original ideas — not copies of the analysed titles.\nKeep bullets short and concrete. Every claim must trace back to the analysed videos.`,
+      { reasoning: "medium" },
     );
 
     const saved = await supabase
