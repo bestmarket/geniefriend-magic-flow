@@ -529,6 +529,19 @@ export const queueFromPrompts = createServerFn({ method: "POST" })
         status: data.scheduledAt ? "scheduled" : "queued",
         scheduled_at: data.scheduledAt ?? null,
         scenes: scenes as never,
+        settings: {
+          format: data.format,
+          captions: {
+            enabled: true,
+            size: data.format === "shorts" ? "lg" : "md",
+            position: data.format === "shorts" ? "center" : "bottom",
+            color: "#ffffff",
+          },
+          pacing:
+            data.format === "shorts"
+              ? { minSceneSeconds: 2.5, gapSeconds: 0.15 }
+              : { minSceneSeconds: 3, gapSeconds: 0.35 },
+        } as never,
       })
       .select("*")
       .single();
