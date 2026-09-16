@@ -10,8 +10,9 @@ import { DEFAULT_INGREDIENTS, type VideoIngredients } from "./videoIngredients";
 
 export type RenderScene = { imageUrl: string; audioUrl: string | null; caption?: string };
 
-const WIDTH = 1280;
-const HEIGHT = 720;
+// Set per render: 16:9 for longform, 9:16 for shorts.
+let WIDTH = 1280;
+let HEIGHT = 720;
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -243,6 +244,14 @@ export async function renderVideo(
 ): Promise<Blob> {
   if (typeof MediaRecorder === "undefined") {
     throw new Error("This browser can't assemble the video. Try Chrome on desktop.");
+  }
+
+  if (ingredients.format === "shorts") {
+    WIDTH = 720;
+    HEIGHT = 1280;
+  } else {
+    WIDTH = 1280;
+    HEIGHT = 720;
   }
 
   const canvas = document.createElement("canvas");

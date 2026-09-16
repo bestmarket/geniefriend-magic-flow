@@ -379,6 +379,11 @@ export const queueVideos = createServerFn({ method: "POST" })
         scriptIds: z.array(z.string().uuid()).min(1).max(10),
         languages: z.array(z.string().min(2).max(40)).min(1).max(6),
         style: z.string().min(1).max(40).default("cinematic"),
+        formats: z
+          .array(z.enum(["shorts", "longform"]))
+          .min(1)
+          .max(2)
+          .default(["longform"]),
         scheduledAt: z.string().datetime().nullable().optional(),
       })
       .parse(input),
@@ -419,17 +424,29 @@ export const queueVideos = createServerFn({ method: "POST" })
           }));
         }
 
-        rows.push({
-          project_id: data.projectId,
-          script_id: script.id,
-          user_id: userId,
-          language,
-          title: title.slice(0, 200),
-          style: data.style,
-          status: data.scheduledAt ? "scheduled" : "queued",
-          scheduled_at: data.scheduledAt ?? null,
-          scenes: localized,
-        });
+        for (const format of data.formats) {
+          const short = format === "shorts";
+          // Shorts stay punchy: the first few scenes only, faster pacing, vertical frame.
+          const cut = short ? localized.slice(0, 5) : localized;
+          rows.push({
+            project_id: data.projectId,
+            script_id: script.id,
+            user_id: userId,
+            language,
+            title: `${title}${short ? " (Short)" : ""}`.slice(0, 200),
+            style: data.style,
+            status: data.scheduledAt ? "scheduled" : "queued",
+            scheduled_at: data.scheduledAt ?? null,
+            scenes: cut,
+            settings: {
+              format,
+              captions: { enabled: true, size: short ? "lg" : "md", position: short ? "center" : "bottom", color: "#ffffff" },
+              pacing: short
+                ? { minSceneSeconds: 2.5, gapSeconds: 0.15 }
+                : { minSceneSeconds: 3, gapSeconds: 0.35 },
+            },
+          });
+        }
       }
     }
 
@@ -452,6 +469,7 @@ export const queueFromPrompts = createServerFn({ method: "POST" })
         prompts: z.string().min(3).max(6000),
         language: z.string().min(2).max(40).default("English"),
         style: z.string().min(1).max(40).default("cinematic"),
+        format: z.enum(["shorts", "longform"]).default("longform"),
         scheduledAt: z.string().datetime().nullable().optional(),
       })
       .parse(input),
@@ -511,6 +529,19 @@ export const queueFromPrompts = createServerFn({ method: "POST" })
         status: data.scheduledAt ? "scheduled" : "queued",
         scheduled_at: data.scheduledAt ?? null,
         scenes: scenes as never,
+        settings: {
+          format: data.format,
+          captions: {
+            enabled: true,
+            size: data.format === "shorts" ? "lg" : "md",
+            position: data.format === "shorts" ? "center" : "bottom",
+            color: "#ffffff",
+          },
+          pacing:
+            data.format === "shorts"
+              ? { minSceneSeconds: 2.5, gapSeconds: 0.15 }
+              : { minSceneSeconds: 3, gapSeconds: 0.35 },
+        } as never,
       })
       .select("*")
       .single();
