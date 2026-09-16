@@ -93,10 +93,15 @@ function extractJson(raw: string): unknown {
 }
 
 /** Asks the writing model for JSON and parses it. */
-export async function askAIJson<T>(system: string, prompt: string): Promise<T> {
+export async function askAIJson<T>(
+  system: string,
+  prompt: string,
+  opts?: { reasoning?: "low" | "medium" | "high" },
+): Promise<T> {
   const raw = await askAI(
     `${system}\n\nAlways reply with valid JSON only. No markdown fences, no commentary.`,
     prompt,
+    opts,
   );
   return extractJson(raw) as T;
 }
