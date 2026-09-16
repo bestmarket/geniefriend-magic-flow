@@ -123,16 +123,44 @@ function ChatPage() {
     );
   }
 
+  const quickSteps = [
+    {
+      label: "Channel name ideas",
+      prompt:
+        "Let's build my channel. Give me channel name ideas that fit this niche and tone, with the reasoning for each.",
+    },
+    {
+      label: "Unique video ideas",
+      prompt:
+        "Give me original video ideas in this channel's exact style — unique angles from the gaps the reference channel leaves open.",
+    },
+    {
+      label: "High-CTR titles & thumbnails",
+      prompt:
+        "Give me high-CTR titles and thumbnail concepts for my best ideas — title formulas, thumbnail composition, text and emotion.",
+    },
+    {
+      label: "Script in the channel's style",
+      prompt:
+        "Write a full high-quality script modeling this channel's style — hook, open loops, payoff placement and CTA. Use my top kept idea.",
+    },
+    {
+      label: "Growth plan",
+      prompt:
+        "Give me a growth plan for this channel: upload cadence, series formats, and how videos should funnel into each other.",
+    },
+  ];
+
   return (
     <div className="space-y-8">
-      <section className="flex h-[26rem] flex-col rounded-lg border border-border">
+      <section className="flex h-[30rem] flex-col rounded-lg border border-border">
         <Conversation>
           <ConversationContent>
             {brainstorm ? (
               <Message from="assistant">
                 <MessageContent>
                   <p className="mb-2 text-xs font-medium text-muted-foreground">
-                    Brainstorm from your analysed videos
+                    Channel intelligence report — how the whole channel wins
                     {brainstormAt ? ` · ${new Date(brainstormAt).toLocaleString()}` : ""}
                   </p>
                   <MessageResponse>{brainstorm}</MessageResponse>
@@ -140,10 +168,17 @@ function ChatPage() {
               </Message>
             ) : null}
             {messages.length === 0 && !brainstorm ? (
-              <p className="m-auto max-w-xs text-center text-sm text-muted-foreground">
-                Ask about angles, titles or how to improve a script. The assistant knows your
-                channel, its ideas and its scripts.
-              </p>
+              <div className="m-auto max-w-sm space-y-2 text-center text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Your channel strategist</p>
+                <p>
+                  I model the whole reference channel — its virality, voice, hooks, visuals and
+                  growth — then walk you step by step: name, ideas, titles, thumbnails and scripts
+                  in that channel's style.
+                </p>
+                <p className="text-xs">
+                  Analyse the reference videos on the Sources tab first, then pick a step below.
+                </p>
+              </div>
             ) : (
               messages.map((message, i) => (
                 <Message from={message.role} key={i}>
@@ -153,11 +188,24 @@ function ChatPage() {
                 </Message>
               ))
             )}
-            {send.isPending ? <Shimmer>Thinking…</Shimmer> : null}
+            {send.isPending ? <Shimmer>Studying your channel…</Shimmer> : null}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
-        <div className="border-t border-border p-3">
+        <div className="space-y-2 border-t border-border p-3">
+          <div className="flex flex-wrap gap-1.5">
+            {quickSteps.map((step) => (
+              <button
+                key={step.label}
+                type="button"
+                disabled={send.isPending || !projectId}
+                onClick={() => submit(step.prompt)}
+                className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+              >
+                {step.label}
+              </button>
+            ))}
+          </div>
           <PromptInput
             onSubmit={(_message, event) => {
               event.preventDefault();
@@ -167,7 +215,7 @@ function ChatPage() {
             <PromptInputTextarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Ask about your channel…"
+              placeholder="Ask about your channel's strategy, ideas, titles, thumbnails, scripts…"
             />
             <PromptInputFooter className="justify-end">
               <PromptInputSubmit

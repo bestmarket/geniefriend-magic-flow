@@ -645,7 +645,7 @@ export const deleteVideo = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Conversational assistant that knows the channel, its ideas and scripts. */
+/** Channel strategist chat: models the whole channel and guides the creator step by step. */
 export const studioChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -664,31 +664,52 @@ export const studioChat = createServerFn({ method: "POST" })
     const { askAI } = await import("./ai.server");
     const { supabase } = context;
 
-    const [project, ideas, scripts] = await Promise.all([
+    const [project, ideas, scripts, videoStats] = await Promise.all([
       supabase
         .from("projects")
         .select("name,channel_profile,brainstorm")
         .eq("id", data.projectId)
         .single(),
-      supabase.from("ideas").select("title,hook").eq("project_id", data.projectId).limit(20),
+      supabase.from("ideas").select("title,hook,angle,selected").eq("project_id", data.projectId).limit(20),
       supabase.from("scripts").select("title").eq("project_id", data.projectId).limit(20),
+      supabase
+        .from("source_videos")
+        .select("title,analysis")
+        .eq("project_id", data.projectId)
+        .eq("status", "done")
+        .limit(30),
     ]);
+
+    const analysedVideos = (videoStats.data ?? []) as Array<{ title: string | null; analysis: unknown }>;
 
     const transcript = data.history
       .map((m) => `${m.role === "user" ? "User" : "You"}: ${m.content}`)
       .join("\n");
 
     const reply = await askAI(
-      `You are the production assistant for the channel "${project.data?.name ?? "this channel"}". Be concise and practical. Channel formula: ${JSON.stringify(
-        project.data?.channel_profile ?? "not analysed yet",
-      )}. Existing ideas: ${(ideas.data ?? []).map((i) => i.title).join("; ") || "none"}. Existing scripts: ${
-        (scripts.data ?? []).map((s) => s.title).join("; ") || "none"
-      }.${
-        project.data?.brainstorm
-          ? `\n\nBrainstorm from the analysed reference videos:\n${project.data.brainstorm}`
-          : ""
-      }`,
+      `You are the elite channel strategist for "${project.data?.name ?? "this channel"}" — a premium consultant who has reverse-engineered the reference channel it models. You think deeply before answering and every answer is specific, actionable and grounded in the channel intelligence below. Never give generic YouTube advice; always tie guidance back to this channel's DNA, hooks, visuals and audience.
+
+CHANNEL INTELLIGENCE
+Channel formula: ${JSON.stringify(project.data?.channel_profile ?? "not built yet")}
+${
+  project.data?.brainstorm
+    ? `Channel intelligence report (built from the analysed reference videos — treat this as the source of truth about the channel's virality, style, tone, hook patterns, visuals, thumbnails and growth):\n${project.data.brainstorm}`
+    : "No channel intelligence report yet. If the user asks for ideas, titles or scripts, first tell them to analyse the reference videos on the Sources tab and build the report."
+}
+Reference videos analysed: ${analysedVideos.length}. Titles: ${analysedVideos.map((v) => v.title ?? "untitled").join("; ") || "none"}.
+Existing ideas: ${(ideas.data ?? []).map((i) => `${i.title}${i.selected ? " (kept)" : ""}`).join("; ") || "none"}.
+Existing scripts: ${(scripts.data ?? []).map((s) => s.title).join("; ") || "none"}.
+
+HOW YOU GUIDE THE CREATOR
+You walk the creator through building their channel, one step at a time. Proactively offer the next step at the end of each reply, in this order:
+1. Channel name ideas that fit the modelled niche and tone (offer 5-8 with the reasoning for each).
+2. Original video ideas in the channel's exact style (unique angles from the gaps the reference channel leaves open).
+3. High-CTR titles and thumbnail concepts for the chosen ideas (title formulas, thumbnail composition, text, emotion).
+4. Full scripts written in the channel's voice — hook, open loops, payoff placement, CTA — built for retention and advertiser-safe monetisation.
+5. Growth plan: cadence, series, and how videos funnel into each other.
+When the user asks for any of these, deliver the full premium answer immediately (not an outline) in clean markdown, then offer the next step. When they ask something else, answer it with the same depth. Keep momentum: end with one clear question about what to do next.`,
       `${transcript ? `${transcript}\n` : ""}User: ${data.message}`,
+      { reasoning: "medium" },
     );
 
     return { reply };
